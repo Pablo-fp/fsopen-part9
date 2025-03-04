@@ -1,5 +1,3 @@
-import { isNotNumber } from './utils';
-
 interface ExerciseResult {
   periodLength: number;
   trainingDays: number;
@@ -45,20 +43,45 @@ const calculateExercises = (
   };
 };
 
-const args = process.argv.slice(2);
-if (args.length < 2) {
-  console.error(
-    'Error: Please provide a target followed by daily exercise numbers.'
-  );
-  process.exit(1);
+// Safe argument parsing with type checking
+const parseArgs = (
+  args: string[]
+): { target: number; dailyExercises: number[] } => {
+  if (args.length < 2) {
+    throw new Error(
+      'Please provide a target followed by daily exercise numbers.'
+    );
+  }
+
+  const target = Number(args[0]);
+  const dailyExercises = args.slice(1).map((arg) => Number(arg));
+
+  if (isNaN(target) || dailyExercises.some(isNaN)) {
+    throw new Error('All provided values must be numbers.');
+  }
+
+  return { target, dailyExercises };
+};
+
+// Main execution with error handling
+const main = () => {
+  try {
+    const args = process.argv.slice(2);
+    const { target, dailyExercises } = parseArgs(args);
+
+    const result = calculateExercises(dailyExercises, target);
+    console.log(result);
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error(`Error: ${error.message}`);
+      process.exit(1);
+    }
+  }
+};
+
+// Only call main if this file is being run directly
+if (require.main === module) {
+  main();
 }
 
-const target = Number(args[0]);
-const dailyExercises = args.slice(1).map((arg) => Number(arg));
-
-if (isNotNumber(target) || dailyExercises.some(isNotNumber)) {
-  console.error('Error: All provided values must be numbers.');
-  process.exit(1);
-}
-
-console.log(calculateExercises(dailyExercises, target));
+export { calculateExercises };
