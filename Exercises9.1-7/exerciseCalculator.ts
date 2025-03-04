@@ -1,3 +1,5 @@
+import { isNotNumber } from './utils';
+
 interface ExerciseResult {
   periodLength: number;
   trainingDays: number;
@@ -43,7 +45,20 @@ const calculateExercises = (
   };
 };
 
-// Hard-coded call for testing purpose
-const dailyExercises = [3, 0, 2, 4.5, 0, 3, 1];
-const target = 2;
+const args = process.argv.slice(2);
+if (args.length < 2) {
+  console.error(
+    'Error: Please provide a target followed by daily exercise numbers.'
+  );
+  process.exit(1);
+}
+
+const target = Number(args[0]);
+const dailyExercises = args.slice(1).map((arg) => Number(arg));
+
+if (isNotNumber(target) || dailyExercises.some(isNotNumber)) {
+  console.error('Error: All provided values must be numbers.');
+  process.exit(1);
+}
+
 console.log(calculateExercises(dailyExercises, target));
