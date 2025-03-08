@@ -40,4 +40,5 @@ export const toPatient = (object: any): Patient => {
 
 // Export types that could be used for the full data arrays
 export type PatientsData = Array<Patient>;
+export type PatientData = Patient;
 export type DiagnosesData = Array<Diagnosis>;
