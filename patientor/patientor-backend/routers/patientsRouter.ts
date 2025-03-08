@@ -1,11 +1,23 @@
 import express from 'express';
 import { v1 as uuid } from 'uuid';
+import { z } from 'zod';
 
-import { toPatient, Patient } from '../types';
+import { Gender, Patient } from '../types';
 import patientsData from '../data/patientsData';
 const patients: Patient[] = patientsData as unknown as Patient[];
 
 const router = express.Router();
+
+// Zod schema for patient validation
+const patientSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  dateOfBirth: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)'),
+  ssn: z.string().min(1, 'SSN is required'),
+  gender: z.nativeEnum(Gender),
+  occupation: z.string().min(1, 'Occupation is required')
+});
 
 // Function to get all patients
 const getPatients = (): Patient[] => {
@@ -18,7 +30,8 @@ router.get('/', (_req, res) => {
 
 // Function to add a new patient
 const addPatient = (patientData: any): Patient => {
-  const newPatient = toPatient({ ...patientData, id: uuid() });
+  const validatedPatient = patientSchema.parse(patientData);
+  const newPatient = { ...validatedPatient, id: uuid() };
   patients.push(newPatient); // Add patient to the array
   return newPatient;
 };
@@ -28,9 +41,13 @@ router.post('/', (req, res) => {
     const addedPatient = addPatient(req.body);
     res.status(201).json(addedPatient);
   } catch (error) {
-    res.status(400).json({
-      error: error instanceof Error ? error.message : 'Invalid patient data'
-    });
+    if (error instanceof z.ZodError) {
+      res.status(400).json({ errors: error.errors });
+    } else {
+      res.status(400).json({
+        error: error instanceof Error ? error.message : 'Invalid patient data'
+      });
+    }
   }
 });
 
