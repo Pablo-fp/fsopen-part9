@@ -1,5 +1,11 @@
-// Define Gender type as a union of string literals
-export type Gender = 'male' | 'female' | 'other';
+// Define Gender enum
+enum Gender {
+  Male = 'male',
+  Female = 'female',
+  Other = 'other'
+}
+
+export { Gender };
 
 // Interface for Patient data
 export interface Patient {
@@ -19,8 +25,8 @@ export interface Diagnosis {
 }
 
 // Type assertion function to safely convert string gender to Gender type
-export const assertGender = (gender: string): Gender => {
-  if (gender === 'male' || gender === 'female' || gender === 'other') {
+export const assertGender = (gender: any): Gender => {
+  if (Object.values(Gender).includes(gender)) {
     return gender as Gender;
   }
   throw new Error(`Invalid gender: ${gender}`);
@@ -28,13 +34,28 @@ export const assertGender = (gender: string): Gender => {
 
 // Utility function to safely parse patient data
 export const toPatient = (object: any): Patient => {
+  if (!object || typeof object !== 'object') {
+    throw new Error('Invalid input: not an object');
+  }
+
+  if (
+    !('id' in object) ||
+    !('name' in object) ||
+    !('dateOfBirth' in object) ||
+    !('ssn' in object) ||
+    !('gender' in object) ||
+    !('occupation' in object)
+  ) {
+    throw new Error('Missing required fields');
+  }
+
   return {
-    id: object.id,
-    name: object.name,
-    dateOfBirth: object.dateOfBirth,
-    ssn: object.ssn,
+    id: String(object.id),
+    name: String(object.name),
+    dateOfBirth: String(object.dateOfBirth),
+    ssn: String(object.ssn),
     gender: assertGender(object.gender),
-    occupation: object.occupation
+    occupation: String(object.occupation)
   };
 };
 
