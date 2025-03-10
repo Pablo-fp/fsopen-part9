@@ -61,6 +61,7 @@ const App = () => {
   return (
     <div>
       <h1>Flight visibility</h1>
+      {error && <div style={{ color: 'red', margin: '10px 0' }}>{error}</div>}
       <form onSubmit={handleSubmit}>
         <div>
           <label>Date:</label>
@@ -70,31 +71,55 @@ const App = () => {
             onChange={(e) => setDate(e.target.value)}
           />
         </div>
-        <div>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            margin: '10px 0'
+          }}
+        >
           <label>Weather:</label>
-          <select
-            value={weather}
-            onChange={(e) => setWeather(e.target.value as Weather)}
-          >
-            {Object.values(Weather).map((weatherOption) => (
-              <option key={weatherOption} value={weatherOption}>
+          {Object.values(Weather).map((weatherOption) => (
+            <div key={weatherOption}>
+              <input
+                type="radio"
+                id={`weather-${weatherOption}`}
+                name="weather"
+                value={weatherOption}
+                checked={weather === weatherOption}
+                onChange={() => setWeather(weatherOption)}
+              />
+              <label htmlFor={`weather-${weatherOption}`}>
                 {weatherOption}
-              </option>
-            ))}
-          </select>
+              </label>
+            </div>
+          ))}
         </div>
-        <div>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            margin: '10px 0'
+          }}
+        >
           <label>Visibility:</label>
-          <select
-            value={visibility}
-            onChange={(e) => setVisibility(e.target.value as Visibility)}
-          >
-            {Object.values(Visibility).map((visibilityOption) => (
-              <option key={visibilityOption} value={visibilityOption}>
+          {Object.values(Visibility).map((visibilityOption) => (
+            <div key={visibilityOption}>
+              <input
+                type="radio"
+                id={`visibility-${visibilityOption}`}
+                name="visibility"
+                value={visibilityOption}
+                checked={visibility === visibilityOption}
+                onChange={() => setVisibility(visibilityOption)}
+              />
+              <label htmlFor={`visibility-${visibilityOption}`}>
                 {visibilityOption}
-              </option>
-            ))}
-          </select>
+              </label>
+            </div>
+          ))}
         </div>
         <div>
           <label>Comment:</label>
