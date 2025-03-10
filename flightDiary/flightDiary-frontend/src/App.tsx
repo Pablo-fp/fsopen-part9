@@ -10,6 +10,7 @@ const App = () => {
   const [weather, setWeather] = useState<Weather>(Weather.Sunny);
   const [visibility, setVisibility] = useState<Visibility>(Visibility.Good);
   const [comment, setComment] = useState('');
+  const [error, setError] = useState<string | null>(null); // New state for error messages
 
   useEffect(() => {
     void axios.get<void>(`http://localhost:3000/ping`);
@@ -23,6 +24,7 @@ const App = () => {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    setError(null); // Reset error state before attempting to create a new entry
 
     const newDiaryEntry = {
       date,
@@ -31,17 +33,29 @@ const App = () => {
       comment
     };
 
-    // Send the new entry to the backend
-    const createdEntry = await diaryService.create(newDiaryEntry);
+    try {
+      // Send the new entry to the backend
+      const createdEntry = await diaryService.create(newDiaryEntry);
 
-    // Update the state with the new entry
-    setDiaries([...diaries, createdEntry]);
+      // Update the state with the new entry
+      setDiaries([...diaries, createdEntry]);
 
-    // Reset the form fields
-    setDate('');
-    setWeather(Weather.Sunny);
-    setVisibility(Visibility.Good);
-    setComment('');
+      // Reset the form fields
+      setDate('');
+      setWeather(Weather.Sunny);
+      setVisibility(Visibility.Good);
+      setComment('');
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        // Narrow down the error to AxiosError and extract the error message
+        setError(
+          error.response?.data ||
+            'An error occurred while creating the diary entry.'
+        );
+      } else {
+        setError('An unexpected error occurred.');
+      }
+    }
   };
 
   return (
