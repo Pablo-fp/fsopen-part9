@@ -28,10 +28,25 @@ router.get('/', (_req, res) => {
   res.send(getPatients());
 });
 
+// Function to get a single patient by ID
+const getPatientById = (id: string): Patient | undefined => {
+  return patients.find((patient) => patient.id === id);
+};
+
+// Endpoint to get a single patient by ID
+router.get('/:id', (req, res) => {
+  const patient = getPatientById(req.params.id);
+  if (patient) {
+    res.send(patient);
+  } else {
+    res.status(404).send({ error: 'Patient not found' });
+  }
+});
+
 // Function to add a new patient
 const addPatient = (patientData: any): Patient => {
   const validatedPatient = patientSchema.parse(patientData);
-  const newPatient = { ...validatedPatient, id: uuid() };
+  const newPatient = { ...validatedPatient, id: uuid(), entries: [] };
   patients.push(newPatient); // Add patient to the array
   return newPatient;
 };

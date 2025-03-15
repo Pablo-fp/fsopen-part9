@@ -7,6 +7,11 @@ enum Gender {
 
 export { Gender };
 
+// Interface for Entry data
+export interface Entry {
+  // For now, this is empty
+}
+
 // Interface for Patient data
 export interface Patient {
   id: string;
@@ -15,7 +20,11 @@ export interface Patient {
   ssn: string;
   gender: Gender;
   occupation: string;
+  entries: Entry[]; // Add entries array
 }
+
+// Type for non-sensitive patient data
+export type NonSensitivePatient = Omit<Patient, 'ssn' | 'entries'>;
 
 // Interface for Diagnosis data
 export interface Diagnosis {
@@ -55,7 +64,8 @@ export const toPatient = (object: any): Patient => {
     dateOfBirth: String(object.dateOfBirth),
     ssn: String(object.ssn),
     gender: assertGender(object.gender),
-    occupation: String(object.occupation)
+    occupation: String(object.occupation),
+    entries: []
   };
 };
 
