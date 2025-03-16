@@ -39,7 +39,9 @@ const PatientPage: React.FC = () => {
 
   return (
     <div>
-      <h1>{patient.name} {genderIcon()}</h1>
+      <h1>
+        {patient.name} {genderIcon()}
+      </h1>
       <p>Date of Birth: {patient.dateOfBirth}</p>
       <p>SSN: {patient.ssn}</p>
       <p>Gender: {patient.gender}</p>
@@ -50,7 +52,20 @@ const PatientPage: React.FC = () => {
       ) : (
         <ul>
           {patient.entries.map((entry, index) => (
-            <li key={index}>{/* Render entry details here */}</li>
+            <li key={index}>
+              <p>Date: {entry.date}</p>
+              <p>Description: {entry.description}</p>
+              {entry.diagnosisCodes && entry.diagnosisCodes.length > 0 && (
+                <>
+                  <p>Diagnosis Codes:</p>
+                  <ul>
+                    {entry.diagnosisCodes.map((code, codeIndex) => (
+                      <li key={codeIndex}>{code}</li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </li>
           ))}
         </ul>
       )}
