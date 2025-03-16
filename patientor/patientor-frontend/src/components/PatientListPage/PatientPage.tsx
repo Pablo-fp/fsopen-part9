@@ -6,6 +6,7 @@ import TransgenderIcon from '@mui/icons-material/Transgender';
 import { Patient, Diagnosis } from '../../types';
 import patientService from '../../services/patients';
 import diagnosesService from '../../services/diagnoses';
+import EntryDetails from '../EntryDetails';
 
 const PatientPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -80,26 +81,7 @@ const PatientPage: React.FC = () => {
         <ul>
           {patient.entries.map((entry, index) => (
             <li key={index}>
-              <p>Date: {entry.date}</p>
-              <p>Description: {entry.description}</p>
-              {entry.diagnosisCodes && entry.diagnosisCodes.length > 0 && (
-                <>
-                  <p>Diagnosis Codes:</p>
-                  <ul>
-                    {entry.diagnosisCodes.map((code, codeIndex) => {
-                      const diagnosis = diagnosisMap[code];
-                      return (
-                        <li key={codeIndex}>
-                          {code}{' '}
-                          {diagnosis
-                            ? diagnosis.name
-                            : '(Diagnosis Name Not Found)'}
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </>
-              )}
+              <EntryDetails entry={entry} />
             </li>
           ))}
         </ul>
