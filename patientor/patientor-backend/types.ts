@@ -7,10 +7,37 @@ enum Gender {
 
 export { Gender };
 
-// Interface for Entry data
-export interface Entry {
-  // For now, this is empty
+export interface BaseEntry {
+  id: string;
+  description: string;
+  date: string;
+  specialist: string;
+  diagnosisCodes?: Array<Diagnosis['code']>;
 }
+
+export enum EntryType {
+  OccupationalHealthcare = 'OccupationalHealthcare',
+  Hospital = 'Hospital'
+}
+
+interface OccupationalHealthcareEntry extends BaseEntry {
+  type: EntryType.OccupationalHealthcare;
+  employerName: string;
+  sickLeave?: {
+    startDate: string;
+    endDate: string;
+  };
+}
+
+interface HospitalEntry extends BaseEntry {
+  type: EntryType.Hospital;
+  discharge: {
+    date: string;
+    criteria: string;
+  };
+}
+
+export type Entry = OccupationalHealthcareEntry | HospitalEntry;
 
 // Interface for Patient data
 export interface Patient {
