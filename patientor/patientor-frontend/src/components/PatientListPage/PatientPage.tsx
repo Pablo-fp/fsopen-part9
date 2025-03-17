@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import MaleIcon from '@mui/icons-material/Male';
 import FemaleIcon from '@mui/icons-material/Female';
 import TransgenderIcon from '@mui/icons-material/Transgender';
-import { Patient, EntryWithoutId, Diagnosis } from '../../types';
+import { Patient, Entry, Diagnosis } from '../../types';
 import patientService from '../../services/patients';
 import diagnosesService from '../../services/diagnoses';
 import EntryDetails from '../EntryDetails';
@@ -54,7 +54,7 @@ const PatientPage: React.FC = () => {
     return <div>Loading...</div>;
   }
 
-  const handleEntryAdded = (newEntry: EntryWithoutId) => {
+  const handleEntryAdded = (newEntry: Entry) => {
     // Update the patient's entries with the new entry
     setPatient({
       ...patient,

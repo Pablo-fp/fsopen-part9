@@ -1,4 +1,4 @@
-import { EntryWithoutId, Diagnosis } from './types';
+import { EntryWithoutId, Diagnosis } from './types'; // Adjust path
 
 const parseDiagnosisCodes = (object: any): Array<Diagnosis['code']> => {
   if (!object || typeof object !== 'object' || !('diagnosisCodes' in object)) {

@@ -5,7 +5,8 @@ import {
   HospitalEntry,
   OccupationalHealthcareEntry,
   HealthCheckEntry,
-  HealthCheckRating
+  HealthCheckRating,
+  EntryType
 } from '../types';
 import { Typography, Box, Icon } from '@mui/material';
 import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
@@ -24,7 +25,7 @@ interface EntryDetailsProps {
 
 const EntryDetails: React.FC<EntryDetailsProps> = ({ entry }) => {
   switch (entry.type) {
-    case 'Hospital':
+    case EntryType.Hospital:
       const hospitalEntry = entry as HospitalEntry;
       return (
         <Box border={1} borderColor="grey.500" p={2} m={2}>
@@ -45,7 +46,7 @@ const EntryDetails: React.FC<EntryDetailsProps> = ({ entry }) => {
           </Typography>
         </Box>
       );
-    case 'OccupationalHealthcare':
+    case EntryType.OccupationalHealthcare:
       const occupationalEntry = entry as OccupationalHealthcareEntry;
       return (
         <Box border={1} borderColor="grey.500" p={2} m={2}>
@@ -71,7 +72,7 @@ const EntryDetails: React.FC<EntryDetailsProps> = ({ entry }) => {
           )}
         </Box>
       );
-    case 'HealthCheck':
+    case EntryType.HealthCheck:
       const healthCheckEntry = entry as HealthCheckEntry;
 
       const ratingToString = (rating: HealthCheckRating): string => {
