@@ -3,17 +3,19 @@ import { useParams } from 'react-router-dom';
 import MaleIcon from '@mui/icons-material/Male';
 import FemaleIcon from '@mui/icons-material/Female';
 import TransgenderIcon from '@mui/icons-material/Transgender';
-import { Patient, Diagnosis } from '../../types';
+import { Patient, EntryWithoutId, Diagnosis } from '../../types';
 import patientService from '../../services/patients';
 import diagnosesService from '../../services/diagnoses';
 import EntryDetails from '../EntryDetails';
+import NewEntryForm from '../NewEntryForm';
 
 const PatientPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const [patient, setPatient] = useState<Patient | null>(null);
+  const [patient, setPatient] = useState<Patient | undefined>(undefined);
   const [diagnosisMap, setDiagnosisMap] = useState<
     Record<string, Diagnosis | null>
   >({});
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchPatient = async () => {
@@ -52,6 +54,20 @@ const PatientPage: React.FC = () => {
     return <div>Loading...</div>;
   }
 
+  const handleEntryAdded = (newEntry: EntryWithoutId) => {
+    // Update the patient's entries with the new entry
+    setPatient({
+      ...patient,
+      entries: [...patient!.entries, newEntry]
+    } as Patient); // Type assertion here is safe
+  };
+
+  const handleError = (message: string) => {
+    setError(message);
+    // Clear the error after a few seconds (optional)
+    setTimeout(() => setError(null), 5000);
+  };
+
   const genderIcon = () => {
     switch (patient.gender) {
       case 'male':
@@ -74,6 +90,13 @@ const PatientPage: React.FC = () => {
       <p>SSN: {patient.ssn}</p>
       <p>Gender: {patient.gender}</p>
       <p>Occupation: {patient.occupation}</p>
+
+      <NewEntryForm
+        patient={patient}
+        onEntryAdded={handleEntryAdded}
+        onError={handleError}
+      />
+
       <h2>Entries</h2>
       {patient.entries.length === 0 ? (
         <p>No entries found.</p>
