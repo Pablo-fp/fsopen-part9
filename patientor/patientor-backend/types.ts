@@ -1,13 +1,20 @@
-// Define Gender enum
-enum Gender {
+export interface Diagnosis {
+  code: string;
+  name: string;
+  latin?: string;
+}
+
+export interface DiagnosesData {
+  diagnoses: Array<Diagnosis>;
+}
+
+export enum Gender {
   Male = 'male',
   Female = 'female',
   Other = 'other'
 }
 
-export { Gender };
-
-export interface BaseEntry {
+interface BaseEntry {
   id: string;
   description: string;
   date: string;
@@ -15,31 +22,38 @@ export interface BaseEntry {
   diagnosisCodes?: Array<Diagnosis['code']>;
 }
 
-export enum EntryType {
-  OccupationalHealthcare = 'OccupationalHealthcare',
-  Hospital = 'Hospital'
+export enum HealthCheckRating {
+  'Healthy' = 0,
+  'LowRisk' = 1,
+  'HighRisk' = 2,
+  'CriticalRisk' = 3
 }
 
-interface OccupationalHealthcareEntry extends BaseEntry {
-  type: EntryType.OccupationalHealthcare;
-  employerName: string;
-  sickLeave?: {
-    startDate: string;
-    endDate: string;
-  };
+interface HealthCheckEntry extends BaseEntry {
+  type: 'HealthCheck';
+  healthCheckRating: HealthCheckRating;
 }
 
 interface HospitalEntry extends BaseEntry {
-  type: EntryType.Hospital;
+  type: 'Hospital';
   discharge: {
     date: string;
     criteria: string;
   };
 }
 
-export type Entry = OccupationalHealthcareEntry | HospitalEntry;
+interface OccupationalHealthcareEntry extends BaseEntry {
+  type: 'OccupationalHealthcare';
+  employerName: string;
+  sickLeaveStartDate?: string;
+  sickLeaveEndDate?: string;
+}
 
-// Interface for Patient data
+export type Entry =
+  | HospitalEntry
+  | OccupationalHealthcareEntry
+  | HealthCheckEntry;
+
 export interface Patient {
   id: string;
   name: string;
@@ -47,56 +61,17 @@ export interface Patient {
   ssn: string;
   gender: Gender;
   occupation: string;
-  entries: Entry[]; // Add entries array
+  entries: Entry[];
 }
 
-// Type for non-sensitive patient data
-export type NonSensitivePatient = Omit<Patient, 'ssn' | 'entries'>;
+export type NewPatientEntry = Omit<Patient, 'id' | 'entries'>;
 
-// Interface for Diagnosis data
-export interface Diagnosis {
-  code: string;
-  name: string;
-  latin?: string; // Optional since some entries don't have a latin property
-}
+// Define special omit for unions
+type UnionOmit<T, K extends string | number | symbol> = T extends unknown
+  ? Omit<T, K>
+  : never;
+// Define Entry without the 'id' property
+export type EntryWithoutId = UnionOmit<Entry, 'id'>;
 
-// Type assertion function to safely convert string gender to Gender type
-export const assertGender = (gender: any): Gender => {
-  if (Object.values(Gender).includes(gender)) {
-    return gender as Gender;
-  }
-  throw new Error(`Invalid gender: ${gender}`);
-};
-
-// Utility function to safely parse patient data
-export const toPatient = (object: any): Patient => {
-  if (!object || typeof object !== 'object') {
-    throw new Error('Invalid input: not an object');
-  }
-
-  if (
-    !('id' in object) ||
-    !('name' in object) ||
-    !('dateOfBirth' in object) ||
-    !('ssn' in object) ||
-    !('gender' in object) ||
-    !('occupation' in object)
-  ) {
-    throw new Error('Missing required fields');
-  }
-
-  return {
-    id: String(object.id),
-    name: String(object.name),
-    dateOfBirth: String(object.dateOfBirth),
-    ssn: String(object.ssn),
-    gender: assertGender(object.gender),
-    occupation: String(object.occupation),
-    entries: []
-  };
-};
-
-// Export types that could be used for the full data arrays
-export type PatientsData = Array<Patient>;
-export type PatientData = Patient;
-export type DiagnosesData = Array<Diagnosis>;
+// Define NewEntry type that is similar to EntryWithoutId, but allows for the 'id' field to be added later.
+export type NewEntry = Omit<Entry, 'id'>;

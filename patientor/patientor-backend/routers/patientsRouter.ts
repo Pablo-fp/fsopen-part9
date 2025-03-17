@@ -2,7 +2,9 @@ import express from 'express';
 import { v1 as uuid } from 'uuid';
 import { z } from 'zod';
 
-import { Gender, Patient } from '../types';
+import { Gender, Patient, Entry, EntryWithoutId } from '../types';
+import { toNewEntry } from '../utils';
+
 import patientsData from '../data/patientsData';
 const patients: Patient[] = patientsData as unknown as Patient[];
 
@@ -23,7 +25,7 @@ const patientSchema = z.object({
 const getPatients = (): Patient[] => {
   return patients;
 };
-
+// Endpoint to get all patients
 router.get('/', (_req, res) => {
   res.send(getPatients());
 });
@@ -50,7 +52,7 @@ const addPatient = (patientData: any): Patient => {
   patients.push(newPatient); // Add patient to the array
   return newPatient;
 };
-
+// Endpoint to add a new patient
 router.post('/', (req, res) => {
   try {
     const addedPatient = addPatient(req.body);
@@ -63,6 +65,40 @@ router.post('/', (req, res) => {
         error: error instanceof Error ? error.message : 'Invalid patient data'
       });
     }
+  }
+});
+
+// Function to add a new entry to a patient
+const addEntry = (patientId: string, entry: EntryWithoutId): Entry => {
+  const patient = patients.find((p) => p.id === patientId);
+
+  if (!patient) {
+    throw new Error('Patient not found');
+  }
+
+  const newEntry: Entry = {
+    id: uuid(), // Generate a unique ID
+    ...entry
+  };
+
+  patient.entries.push(newEntry);
+  return newEntry;
+};
+
+//Endpoint to add a new entry to a patient
+router.post('/:id/entries', (req, res) => {
+  const patientId = req.params.id;
+
+  try {
+    const newEntry: EntryWithoutId = toNewEntry(req.body); // Assuming toNewEntry validates and transforms to the correct type
+    const addedEntry = addEntry(patientId, newEntry);
+    res.json(addedEntry);
+  } catch (error: any) {
+    let errorMessage = 'Something went wrong.';
+    if (error instanceof Error) {
+      errorMessage += ' Error: ' + error.message;
+    }
+    res.status(400).send(errorMessage);
   }
 });
 

@@ -19,10 +19,11 @@ export enum Gender {
 
 export interface BaseEntry {
   id: string;
-  description: string;
   date: string;
+  type: string;
+  description: string;
   specialist: string;
-  diagnosisCodes?: Array<Diagnosis['code']>;
+  diagnosisCodes?: Array<string>;
 }
 
 export enum EntryType {

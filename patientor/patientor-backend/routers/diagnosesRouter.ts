@@ -1,14 +1,15 @@
-import { DiagnosesData, Diagnosis } from '../types';
+import { Diagnosis } from '../types';
 import diagnosesData from '../data/diagnosesData';
 
-const diagnoses: DiagnosesData = diagnosesData;
+// Cast the imported data to the DiagnosesData type
+const diagnoses: Diagnosis[] = diagnosesData as Diagnosis[];
 
 import express from 'express';
 
 const router = express.Router();
 
 // Get all diagnoses
-const getDiagnoses = (): DiagnosesData => {
+const getDiagnoses = (): Diagnosis[] => {
   return diagnoses;
 };
 
