@@ -14,4 +14,9 @@ const getByCode = async (code: string): Promise<Diagnosis | null> => {
   }
 };
 
-export default { getByCode };
+const getAll = async (): Promise<Diagnosis[]> => {
+  const { data } = await axios.get<Diagnosis[]>(`${apiBaseUrl}/diagnoses`);
+  return data;
+};
+
+export default { getByCode, getAll };

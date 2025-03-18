@@ -1,12 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Patient,
   EntryWithoutId,
-  HealthCheckRating,
   Entry,
-  EntryType
-} from '../types'; //Import EntryType
+  EntryType,
+  Diagnosis,
+  HealthCheckRating
+} from '../types';
 import patientsService from '../services/patients';
+import diagnosesService from '../services/diagnoses';
+import {
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Button,
+  Grid,
+  Chip,
+  Box,
+  SelectChangeEvent
+} from '@mui/material';
+import { DatePicker } from '@mui/x-date-pickers';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import axios from 'axios';
 
 interface Props {
@@ -15,70 +32,109 @@ interface Props {
   onError: (message: string) => void;
 }
 
+const CustomTextField = (props: any) => <TextField {...props} fullWidth />;
+
 const NewEntryForm: React.FC<Props> = ({ patient, onEntryAdded, onError }) => {
-  const [type, setType] = useState<EntryType>(EntryType.HealthCheck); //use the enum
+  const [type, setType] = useState<EntryType>(EntryType.HealthCheck);
   const [description, setDescription] = useState('');
-  const [date, setDate] = useState('');
+  const [date, setDate] = useState<Date | null>(null);
   const [specialist, setSpecialist] = useState('');
-  const [diagnosisCodes, setDiagnosisCodes] = useState('');
+  const [selectedDiagnosisCodes, setSelectedDiagnosisCodes] = useState<
+    string[]
+  >([]);
+  const [allDiagnosisCodes, setAllDiagnosisCodes] = useState<Diagnosis[]>([]);
 
   const [healthCheckRating, setHealthCheckRating] = useState<HealthCheckRating>(
     HealthCheckRating.Healthy
   );
 
   const [employerName, setEmployerName] = useState('');
-  const [sickLeaveStartDate, setSickLeaveStartDate] = useState('');
-  const [sickLeaveEndDate, setSickLeaveEndDate] = useState('');
+  const [sickLeaveStartDate, setSickLeaveStartDate] = useState<Date | null>(
+    null
+  );
+  const [sickLeaveEndDate, setSickLeaveEndDate] = useState<Date | null>(null);
 
-  const [dischargeDate, setDischargeDate] = useState('');
+  const [dischargeDate, setDischargeDate] = useState<Date | null>(null);
   const [dischargeCriteria, setDischargeCriteria] = useState('');
+
+  const [dateError, setDateError] = useState('');
+  const [sickLeaveStartDateError, setSickLeaveStartDateError] = useState('');
+  const [sickLeaveEndDateError, setSickLeaveEndDateError] = useState('');
+  const [dischargeDateError, setDischargeDateError] = useState('');
+
+  useEffect(() => {
+    const fetchDiagnoses = async () => {
+      try {
+        const diagnoses = await diagnosesService.getAll();
+        setAllDiagnosisCodes(diagnoses);
+      } catch (error: any) {
+        console.error('Error fetching diagnoses:', error);
+      }
+    };
+    fetchDiagnoses();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setDateError('');
+    setSickLeaveStartDateError('');
+    setSickLeaveEndDateError('');
+    setDischargeDateError('');
 
     let newEntry: EntryWithoutId | null = null;
+
+    if (!date) {
+      setDateError('Date is required');
+      return;
+    }
 
     try {
       switch (type) {
         case EntryType.HealthCheck:
           newEntry = {
-            type: EntryType.HealthCheck, //use the enum
+            type: EntryType.HealthCheck,
             description,
-            date,
+            date: date.toISOString().slice(0, 10),
             specialist,
-            diagnosisCodes: diagnosisCodes
-              .split(',')
-              .map((code) => code.trim()),
-            healthCheckRating: parseInt(healthCheckRating.toString(), 10)
+            diagnosisCodes: selectedDiagnosisCodes,
+            healthCheckRating: healthCheckRating
           };
           break;
         case EntryType.OccupationalHealthcare:
+          if (!sickLeaveStartDate) {
+            setSickLeaveStartDateError('Sick leave start date is required');
+            return;
+          }
+          if (!sickLeaveEndDate) {
+            setSickLeaveEndDateError('Sick leave end date is required');
+            return;
+          }
           newEntry = {
-            type: EntryType.OccupationalHealthcare, //use the enum
+            type: EntryType.OccupationalHealthcare,
             description,
-            date,
+            date: date.toISOString().slice(0, 10),
             specialist,
-            diagnosisCodes: diagnosisCodes
-              .split(',')
-              .map((code) => code.trim()),
+            diagnosisCodes: selectedDiagnosisCodes,
             employerName,
             sickLeave: {
-              startDate: sickLeaveStartDate,
-              endDate: sickLeaveEndDate
+              startDate: sickLeaveStartDate.toISOString().slice(0, 10),
+              endDate: sickLeaveEndDate.toISOString().slice(0, 10)
             }
           };
           break;
         case EntryType.Hospital:
+          if (!dischargeDate) {
+            setDischargeDateError('Discharge date is required');
+            return;
+          }
           newEntry = {
-            type: EntryType.Hospital, //use the enum
+            type: EntryType.Hospital,
             description,
-            date,
+            date: date.toISOString().slice(0, 10),
             specialist,
-            diagnosisCodes: diagnosisCodes
-              .split(',')
-              .map((code) => code.trim()),
+            diagnosisCodes: selectedDiagnosisCodes,
             discharge: {
-              date: dischargeDate,
+              date: dischargeDate.toISOString().slice(0, 10),
               criteria: dischargeCriteria
             }
           };
@@ -88,24 +144,18 @@ const NewEntryForm: React.FC<Props> = ({ patient, onEntryAdded, onError }) => {
           return;
       }
 
-      if (!newEntry) {
-        onError('Failed to create entry');
-        return;
-      }
-
       const addedEntry = await patientsService.addEntry(patient.id, newEntry);
       onEntryAdded(addedEntry);
 
-      // Reset form fields if successful (optional)
       setDescription('');
-      setDate('');
+      setDate(null);
       setSpecialist('');
-      setDiagnosisCodes('');
+      setSelectedDiagnosisCodes([]);
       setHealthCheckRating(HealthCheckRating.Healthy);
       setEmployerName('');
-      setSickLeaveStartDate('');
-      setSickLeaveEndDate('');
-      setDischargeDate('');
+      setSickLeaveStartDate(null);
+      setSickLeaveEndDate(null);
+      setDischargeDate(null);
       setDischargeCriteria('');
     } catch (error: any) {
       if (axios.isAxiosError(error)) {
@@ -118,128 +168,218 @@ const NewEntryForm: React.FC<Props> = ({ patient, onEntryAdded, onError }) => {
     }
   };
 
+  const handleDiagnosisCodeChange = (event: SelectChangeEvent<string[]>) => {
+    const value = event.target.value;
+    setSelectedDiagnosisCodes(
+      typeof value === 'string' ? value.split(',') : value
+    );
+  };
+
   return (
-    <div>
-      <h3>New Entry</h3>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>Entry Type:</label>
-          <select
-            value={type}
-            onChange={(e) => setType(e.target.value as EntryType)} //cast to the enum
-          >
-            <option value={EntryType.HealthCheck}>HealthCheck</option>
-            <option value={EntryType.OccupationalHealthcare}>
-              OccupationalHealthcare
-            </option>
-            <option value={EntryType.Hospital}>Hospital</option>
-          </select>
-        </div>
-        <div>
-          <label>Description:</label>
-          <input
-            type="text"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
-        </div>
-        <div>
-          <label>Date:</label>
-          <input
-            type="text"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-          />
-        </div>
-        <div>
-          <label>Specialist:</label>
-          <input
-            type="text"
-            value={specialist}
-            onChange={(e) => setSpecialist(e.target.value)}
-          />
-        </div>
-        <div>
-          <label>Diagnosis codes (comma-separated):</label>
-          <input
-            type="text"
-            value={diagnosisCodes}
-            onChange={(e) => setDiagnosisCodes(e.target.value)}
-          />
-        </div>
+    <LocalizationProvider dateAdapter={AdapterDateFns}>
+      <Box sx={{ width: '100%', mt: 2 }}>
+        <h3>New Entry</h3>
+        <form onSubmit={handleSubmit}>
+          <Grid container spacing={2}>
+            <Grid item xs={12}>
+              <FormControl fullWidth>
+                <InputLabel id="entry-type-label">Entry Type</InputLabel>
+                <Select
+                  labelId="entry-type-label"
+                  id="entry-type"
+                  value={type}
+                  label="Entry Type"
+                  onChange={(e) => setType(e.target.value as EntryType)}
+                >
+                  <MenuItem value={EntryType.HealthCheck}>HealthCheck</MenuItem>
+                  <MenuItem value={EntryType.OccupationalHealthcare}>
+                    OccupationalHealthcare
+                  </MenuItem>
+                  <MenuItem value={EntryType.Hospital}>Hospital</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
 
-        {type === EntryType.HealthCheck && (
-          <div>
-            <label>Healthcheck rating:</label>
-            <select
-              value={healthCheckRating}
-              onChange={(e) =>
-                setHealthCheckRating(parseInt(e.target.value, 10))
-              }
-            >
-              <option value={HealthCheckRating.Healthy}>Healthy</option>
-              <option value={HealthCheckRating.LowRisk}>Low Risk</option>
-              <option value={HealthCheckRating.HighRisk}>High Risk</option>
-              <option value={HealthCheckRating.CriticalRisk}>
-                Critical Risk
-              </option>
-            </select>
-          </div>
-        )}
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </Grid>
 
-        {type === EntryType.OccupationalHealthcare && (
-          <>
-            <div>
-              <label>Employer Name:</label>
-              <input
-                type="text"
-                value={employerName}
-                onChange={(e) => setEmployerName(e.target.value)}
+            <Grid item xs={12}>
+              <DatePicker
+                label="Date"
+                value={date}
+                onChange={(newValue) => setDate(newValue)}
+                slots={{
+                  textField: (props) => (
+                    <CustomTextField
+                      {...props}
+                      error={!!dateError}
+                      helperText={dateError}
+                    />
+                  )
+                }}
               />
-            </div>
-            <div>
-              <label>Sick Leave Start Date:</label>
-              <input
-                type="text"
-                value={sickLeaveStartDate}
-                onChange={(e) => setSickLeaveStartDate(e.target.value)}
-              />
-            </div>
-            <div>
-              <label>Sick Leave End Date:</label>
-              <input
-                type="text"
-                value={sickLeaveEndDate}
-                onChange={(e) => setSickLeaveEndDate(e.target.value)}
-              />
-            </div>
-          </>
-        )}
+            </Grid>
 
-        {type === EntryType.Hospital && (
-          <>
-            <div>
-              <label>Discharge Date:</label>
-              <input
-                type="text"
-                value={dischargeDate}
-                onChange={(e) => setDischargeDate(e.target.value)}
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Specialist"
+                value={specialist}
+                onChange={(e) => setSpecialist(e.target.value)}
               />
-            </div>
-            <div>
-              <label>Discharge Criteria:</label>
-              <input
-                type="text"
-                value={dischargeCriteria}
-                onChange={(e) => setDischargeCriteria(e.target.value)}
-              />
-            </div>
-          </>
-        )}
+            </Grid>
 
-        <button type="submit">Add</button>
-      </form>
-    </div>
+            <Grid item xs={12}>
+              <FormControl fullWidth>
+                <InputLabel id="diagnosis-codes-label">
+                  Diagnosis Codes
+                </InputLabel>
+                <Select
+                  labelId="diagnosis-codes-label"
+                  id="diagnosis-codes"
+                  multiple
+                  value={selectedDiagnosisCodes}
+                  onChange={handleDiagnosisCodeChange}
+                  renderValue={(selected) => (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {selected.map((value) => (
+                        <Chip key={value} label={value} />
+                      ))}
+                    </Box>
+                  )}
+                >
+                  {allDiagnosisCodes.map((diagnosis) => (
+                    <MenuItem key={diagnosis.code} value={diagnosis.code}>
+                      {diagnosis.name} ({diagnosis.code})
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+
+            {type === EntryType.HealthCheck && (
+              <Grid item xs={12}>
+                <FormControl fullWidth>
+                  <InputLabel id="health-check-rating-label">
+                    Health Check Rating
+                  </InputLabel>
+                  <Select
+                    labelId="health-check-rating-label"
+                    id="health-check-rating"
+                    value={healthCheckRating.toString()}
+                    label="Health Check Rating"
+                    onChange={(e) =>
+                      setHealthCheckRating(
+                        Number(e.target.value) as HealthCheckRating
+                      )
+                    }
+                  >
+                    <MenuItem value={HealthCheckRating.Healthy.toString()}>
+                      Healthy
+                    </MenuItem>
+                    <MenuItem value={HealthCheckRating.LowRisk.toString()}>
+                      Low Risk
+                    </MenuItem>
+                    <MenuItem value={HealthCheckRating.HighRisk.toString()}>
+                      High Risk
+                    </MenuItem>
+                    <MenuItem value={HealthCheckRating.CriticalRisk.toString()}>
+                      Critical Risk
+                    </MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+            )}
+
+            {type === EntryType.OccupationalHealthcare && (
+              <>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Employer Name"
+                    value={employerName}
+                    onChange={(e) => setEmployerName(e.target.value)}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <DatePicker
+                    label="Sick Leave Start Date"
+                    value={sickLeaveStartDate}
+                    onChange={(newValue) => setSickLeaveStartDate(newValue)}
+                    slots={{
+                      textField: (props) => (
+                        <CustomTextField
+                          {...props}
+                          error={!!sickLeaveStartDateError}
+                          helperText={sickLeaveStartDateError}
+                        />
+                      )
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <DatePicker
+                    label="Sick Leave End Date"
+                    value={sickLeaveEndDate}
+                    onChange={(newValue) => setSickLeaveEndDate(newValue)}
+                    slots={{
+                      textField: (props) => (
+                        <CustomTextField
+                          {...props}
+                          error={!!sickLeaveEndDateError}
+                          helperText={sickLeaveEndDateError}
+                        />
+                      )
+                    }}
+                  />
+                </Grid>
+              </>
+            )}
+
+            {type === EntryType.Hospital && (
+              <>
+                <Grid item xs={12}>
+                  <DatePicker
+                    label="Discharge Date"
+                    value={dischargeDate}
+                    onChange={(newValue) => setDischargeDate(newValue)}
+                    slots={{
+                      textField: (props) => (
+                        <CustomTextField
+                          {...props}
+                          error={!!dischargeDateError}
+                          helperText={dischargeDateError}
+                        />
+                      )
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Discharge Criteria"
+                    value={dischargeCriteria}
+                    onChange={(e) => setDischargeCriteria(e.target.value)}
+                  />
+                </Grid>
+              </>
+            )}
+
+            <Grid item xs={12}>
+              <Button type="submit" variant="contained" color="primary">
+                Add
+              </Button>
+            </Grid>
+          </Grid>
+        </form>
+      </Box>
+    </LocalizationProvider>
   );
 };
 
